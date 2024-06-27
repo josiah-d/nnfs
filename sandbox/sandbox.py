@@ -1,87 +1,56 @@
-import timeit
-
 import numpy as np
+from nnfs.datasets import spiral_data
 
 np.random.seed(42)
 
 SIZE = 4
 NUM_NEURONS = 3
 
-inputs = np.random.randint(low=-5, high=6, size=SIZE)
+X, y = spiral_data(samples=100, classes=3)
 
 
-class Layer:
+class LayerDense:
     """
-    This class is designed to represent a layer of neurons in a neural network.
+    This class is designed to represent a LayerDense of neurons in a neural network.
     """
 
-    def __init__(
-        self, inputs: np.ndarray, weights: np.ndarray = None, bias: int = None
-    ):
-        self.inputs = inputs
-        if weights is not None:
-            self.weights = weights
-        else:
-            self.weights = np.random.rand(*inputs.shape)
-        if bias is not None:
-            self.bias = bias
-        else:
-            self.bias = np.random.randint(low=-5, high=6, size=1)
-
-    def get_output(self):
+    def __init__(self, n_inputs: int, n_neurons: int):
         """
-        The function calculates the output by taking the sum of the element-wise
-        multiplication of inputs and weights, and adding the bias.
+        This function initializes weights and biases for a neural network with specified
+        number of inputs and neurons.
+
+        Args:
+          n_inputs (int): The `n_inputs` parameter represents the number of input
+        features in a neural network layer. It is the number of nodes in the previous
+        layer or the number of input values provided to the current layer.
+          n_neurons (int): The `n_neurons` parameter represents the number of neurons in
+        the neural network layer for which you are initializing the weights and biases.
         """
-        self.output = np.dot(self.inputs, self.weights) + self.bias
+        self.weights = 0.01 * np.random.randn(n_inputs, n_neurons)
+        self.biases = np.zeros((1, n_neurons))
+
+    def forward(self, inputs: np.ndarray):
+        """
+        The forward function calculates the output by multiplying inputs with
+        weights, summing the results, and adding biases.
+
+        Args:
+          inputs (np.ndarray): The `inputs` parameter in the `forward` function
+        represents the input data that is fed into the neural network layer. It is
+        expected to be a NumPy array containing the input values for the layer. The
+        function calculates the output of the layer by performing a dot product
+        between the input data and the
+        """
+        self.output = np.dot(inputs, self.weights) + self.biases
 
 
-inputs = np.asarray([1, 2, 3, 2.5])
-weights = np.asarray(
-    [
-        [0.2, 0.8, -0.5, 1],
-        [0.5, -0.91, 0.26, -0.5],
-        [-0.26, -0.27, 0.17, 0.87],
-    ],
-)
-biases = np.asarray([2, 3, 0.5])
+dense0 = LayerDense(n_inputs=2, n_neurons=3)
+dense1 = LayerDense(n_inputs=3, n_neurons=4)
+dense2 = LayerDense(n_inputs=4, n_neurons=2)
 
+dense0.forward(inputs=X)
+dense1.forward(inputs=dense0.output)
+dense2.forward(inputs=dense1.output)
 
-l0_neurons = [Layer(inputs=inputs, weights=w, bias=b) for w, b in zip(weights, biases)]
-l0_outputs = []
-
-for i, neuron in enumerate(l0_neurons):
-    neuron.get_output()
-    print(f"{i}: {neuron.inputs = }")
-    print(f"{i}: {neuron.weights = }")
-    print(f"{i}: {neuron.bias = }")
-    l0_outputs.append(neuron.output)
-    print(f"{i}: {neuron.output = }")
-
-print(f"{l0_outputs = }")
-
-l1_neurons = [Layer(inputs=np.asarray(l0_outputs)) for _ in range(len(l0_outputs))]
-l1_outputs = []
-
-for i, neuron in enumerate(l1_neurons):
-    neuron.get_output()
-    print(f"{i}: {neuron.inputs = }")
-    print(f"{i}: {neuron.weights = }")
-    print(f"{i}: {neuron.bias = }")
-    l1_outputs.append(neuron.output)
-    print(f"{i}: {neuron.output = }")
-
-print(f"{l1_outputs = }")
-
-
-def time_neuron_output():
-    neuron_outputs = []
-    for weight, bias in zip(weights, biases):
-        neuron = Layer(inputs, weight, bias)
-        output = neuron.get_output()
-        neuron_outputs.append(output)
-    return neuron_outputs
-
-
-execution_time = timeit.timeit("time_neuron_output()", globals=globals(), number=10000)
-print(f"Execution time over 1000 runs: {execution_time} seconds")
+print(dense2.output.shape)
+print(dense2.output)
