@@ -107,6 +107,69 @@ class SoftMax:
         self.output = values / np.sum(values, axis=1, keepdims=True)
 
 
+class Loss:
+    """The `Loss` class calculates the mean loss between predicted output and actual
+    values, while the `CategoricalCrossEntropyLoss` class calculates negative log
+    likelihood for classification tasks."""
+
+    def calculate(self, output: np.ndarray[float], y: np.ndarray[int]) -> float:
+        """
+        The function calculates the mean loss between the predicted output and the
+        actual values.
+
+        Args:
+          output (np.ndarray[float]): The `output` parameter is expected to be a NumPy
+        array of floating-point numbers.
+          y (np.ndarray[int]): The parameter `y` typically represents the true labels or
+        target values in a machine learning context. It is an array containing the
+        actual values that you are trying to predict or classify.
+
+        Returns:
+          the mean of the sample loss calculated by the `forward` method with the given
+        `output` and `y` arrays.
+        """
+        sample_loss = self.forward(y_hat=output, y=y)
+
+        return np.mean(sample_loss)
+
+
+class CategoricalCrossEntropyLoss(Loss):
+    """The `CategoricalCrossEntropyLoss` class calculates the negative log likelihood
+    of predicted probabilities compared to true labels for classification tasks."""
+
+    def forward(self, y_hat: np.ndarray[float], y: np.ndarray[int]):
+        """
+        This function calculates the negative log likelihood of predicted
+        probabilities given true labels.
+
+        Args:
+          y_hat (np.ndarray[float]): An np.ndarray[float] containing predicted
+        probabilities for each class for a set of samples.
+          y (np.ndarray[int]): The parameter `y` in the `forward` method represents the
+        true labels or target values of the data. It is expected to be a numpy array
+        containing integer values that correspond to the class labels or categories for
+        each data point.
+
+        Returns:
+          The function `forward` returns the negative log likelihood of the predicted
+        probabilities `y_hat` compared to the true labels `y`.
+        """
+        n = len(y_hat)
+
+        y_hat_adjusted = np.clip(y_hat, 10**-9, 1 - 10**-9)
+
+        if len(y.shape) == 1:
+            probabilities = y_hat_adjusted[range(n), y]
+        elif len(y.shape) == 2:
+            probabilities = np.sum(y_hat_adjusted * y, axis=1)
+        else:
+            raise ValueError(
+                f"Invalid shape: expected 1-dim or 2-dim data, but got {y.shape}"
+            )
+
+        return -np.log(probabilities)
+
+
 def predict(inputs: np.ndarray[float]) -> np.ndarray[float]:
     """
     The function `predict` takes an array of floats as input and returns an array of
@@ -139,4 +202,11 @@ sigmoid.forward(inputs=dense1.output)
 dense2.forward(inputs=relu.output)
 softmax.forward(inputs=dense2.output)
 
-print(predict(softmax.output))
+cce_loss = CategoricalCrossEntropyLoss()
+loss = cce_loss.calculate(output=softmax.output, y=y)
+
+predictions = predict(inputs=softmax.output)
+accuracy = np.mean(predictions == y)
+
+print(f"{loss = }")
+print(f"{accuracy = }")
